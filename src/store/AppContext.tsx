@@ -33,6 +33,7 @@ interface AppContextType extends AppState {
   updateProject: (project: Project) => void;
   duplicateProject: (id: string) => void;
   archiveProject: (id: string) => void;
+  deleteProject: (id: string) => void;
   addProductionRecords: (records: ProductionRecord[]) => void;
   addCMMReports: (reports: CMMReport[]) => void;
   addIncomingRecords: (records: IncomingRecord[]) => void;
@@ -120,6 +121,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const archiveProject = useCallback((id: string) => {
     setProjects(prev => prev.map(p => p.id === id ? { ...p, status: 'archived' as const } : p));
   }, []);
+
+  const deleteProject = useCallback((id: string) => {
+    setProjects(prev => {
+      const filtered = prev.filter(p => p.id !== id);
+      // If deleting the active project, switch to first available project
+      if (id === activeProjectId && filtered.length > 0) {
+        const firstAvailable = filtered.find(p => p.status !== 'archived') || filtered[0];
+        setActiveProjectId(firstAvailable.id);
+        setFiltersState(f => ({ ...f, projectId: firstAvailable.id }));
+      }
+      return filtered;
+    });
+  }, [activeProjectId]);
 
   const addProductionRecords = useCallback((_records: ProductionRecord[]) => {
     // In a real app, this would update state
@@ -266,7 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       correctiveActions, investigations, knowledgeSkills,
       filters, currentPage, sidebarCollapsed, lastSaved,
       setActiveProject, setCurrentPage, setFilters, toggleSidebar,
-      addProject, updateProject, duplicateProject, archiveProject,
+      addProject, updateProject, duplicateProject, archiveProject, deleteProject,
       addProductionRecords, addCMMReports, addIncomingRecords,
       addInvestigation, updateInvestigation, addCorrectiveAction, updateCorrectiveAction,
       getFilteredProduction, getFilteredCMMMeasurements, getFilteredIncoming, getFilteredInProcess, getActiveProject,

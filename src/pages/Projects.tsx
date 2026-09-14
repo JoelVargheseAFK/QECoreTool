@@ -3,10 +3,16 @@ import { useApp } from '../store/AppContext';
 import { Project } from '../types';
 
 export default function Projects() {
-  const { projects, addProject, updateProject, duplicateProject, archiveProject, setActiveProject, activeProjectId } = useApp();
+  const { projects, addProject, updateProject, duplicateProject, archiveProject, deleteProject, setActiveProject, activeProjectId } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [form, setForm] = useState<Partial<Project>>({});
+
+  const handleDelete = (project: Project) => {
+    if (window.confirm(`Are you sure you want to delete "${project.name}"?\n\nThis action cannot be undone and will permanently remove the project and all its data.`)) {
+      deleteProject(project.id);
+    }
+  };
 
   const openCreate = () => {
     setEditingProject(null);
@@ -129,6 +135,9 @@ export default function Projects() {
                   <i className="fas fa-archive mr-1"></i>
                 </button>
               )}
+              <button onClick={() => handleDelete(p)} className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                <i className="fas fa-trash mr-1"></i>Delete
+              </button>
             </div>
           </div>
         ))}
