@@ -23,6 +23,7 @@ import InvestigationPage from './pages/Investigation';
 import Reports from './pages/Reports';
 import KnowledgeMatrix from './pages/KnowledgeMatrix';
 import Correlation from './pages/Correlation';
+import ControlViewAnalysis from './pages/ControlViewAnalysis';
 import PlaceholderPage from './pages/PlaceholderPage';
 
 const navItems: { key: PageKey; label: string; icon: string; group: string }[] = [
@@ -31,6 +32,7 @@ const navItems: { key: PageKey; label: string; icon: string; group: string }[] =
   { key: 'investigation', label: 'QE Investigation', icon: 'fa-search', group: 'Main' },
   { key: 'production', label: 'Production Data', icon: 'fa-industry', group: 'Data' },
   { key: 'cmm-reports', label: 'CMM Reports', icon: 'fa-file-excel', group: 'Data' },
+  { key: 'control-view', label: 'Control View Analysis', icon: 'fa-microscope', group: 'Data' },
   { key: 'characteristics', label: 'CMM Characteristics', icon: 'fa-draw-polygon', group: 'Data' },
   { key: 'data-mapping', label: 'Data Mapping', icon: 'fa-exchange-alt', group: 'Data' },
   { key: 'feature-movement', label: 'Feature Movement', icon: 'fa-route', group: 'Analysis' },
@@ -66,6 +68,7 @@ function AppContent() {
       case 'production': return <ProductionData />;
       case 'data-mapping': return <DataMapping />;
       case 'cmm-reports': return <CMMReports />;
+      case 'control-view': return <ControlViewAnalysis />;
       case 'characteristics': return <CharacteristicManager />;
       case 'feature-movement': return <FeatureMovement />;
       case 'dimensional': return <DimensionalAnalysis />;

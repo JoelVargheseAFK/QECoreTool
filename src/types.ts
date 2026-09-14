@@ -365,6 +365,7 @@ export type PageKey =
   | 'projects'
   | 'production'
   | 'cmm-reports'
+  | 'control-view'
   | 'feature-movement'
   | 'dimensional'
   | 'spc'
