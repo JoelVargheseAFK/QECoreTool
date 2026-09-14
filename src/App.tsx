@@ -24,6 +24,7 @@ import Reports from './pages/Reports';
 import KnowledgeMatrix from './pages/KnowledgeMatrix';
 import Correlation from './pages/Correlation';
 import ControlViewAnalysis from './pages/ControlViewAnalysis';
+import Settings from './pages/Settings';
 import PlaceholderPage from './pages/PlaceholderPage';
 
 const navItems: { key: PageKey; label: string; icon: string; group: string }[] = [
@@ -56,7 +57,7 @@ const navItems: { key: PageKey; label: string; icon: string; group: string }[] =
 ];
 
 function AppContent() {
-  const { currentPage, setCurrentPage, sidebarCollapsed, toggleSidebar, projects, activeProjectId, setActiveProject } = useApp();
+  const { currentPage, setCurrentPage, sidebarCollapsed, toggleSidebar, projects, activeProjectId, setActiveProject, lastSaved } = useApp();
 
   const groups = Array.from(new Set(navItems.map(n => n.group)));
 
@@ -86,6 +87,7 @@ function AppContent() {
       case 'knowledge-matrix': return <KnowledgeMatrix />;
       case 'reports': return <Reports />;
       case 'correlation': return <Correlation />;
+      case 'settings': return <Settings />;
       default: return <PlaceholderPage pageKey={currentPage} />;
     }
   };
@@ -148,6 +150,14 @@ function AppContent() {
             </div>
           ))}
         </nav>
+
+        {/* Save Indicator */}
+        {!sidebarCollapsed && lastSaved && (
+          <div className="px-3 py-2 border-t border-slate-700 text-[10px] text-green-400 flex items-center gap-1.5">
+            <i className="fas fa-check-circle"></i>
+            <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
+          </div>
+        )}
 
         {/* Collapse Toggle */}
         <button

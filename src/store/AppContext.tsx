@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Project, ProductionRecord, CMMReport, CMMMeasurement, Characteristic, IncomingRecord, AppFilters, PageKey, InProcessInspection, Fixture, Gauge, MSAGRRStudy, PFMEAEntry, ControlPlanEntry, CorrectiveAction, Investigation, KnowledgeSkill } from '../types';
 import { generateSampleProjects, generateSampleProduction, generateSampleCMMReports, generateSampleIncoming, generateCharacteristics, generateInProcessInspections, generateFixtures, generateGauges, generateMSAStudies, generatePFMEA, generateControlPlan, generateCorrectiveActions, generateInvestigations, generateKnowledgeMatrix } from '../data/sampleData';
+import { saveToStorage, loadFromStorage, exportData, importData, clearStorage } from '../utils/storage';
 
 interface AppState {
   projects: Project[];
@@ -44,26 +45,37 @@ interface AppContextType extends AppState {
   getFilteredIncoming: () => IncomingRecord[];
   getFilteredInProcess: () => InProcessInspection[];
   getActiveProject: () => Project | undefined;
+  exportAllData: () => void;
+  importData: (jsonString: string) => boolean;
+  clearAllData: () => void;
+  lastSaved: string | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(generateSampleProjects());
-  const [activeProjectId, setActiveProjectId] = useState('PRJ-001');
-  const [production] = useState<ProductionRecord[]>(generateSampleProduction());
-  const [cmmReports] = useState<CMMReport[]>(generateSampleCMMReports());
-  const [characteristics] = useState<Characteristic[]>(() => generateCharacteristics(generateSampleCMMReports()));
-  const [incomingRecords] = useState<IncomingRecord[]>(generateSampleIncoming());
-  const [inProcessInspections] = useState<InProcessInspection[]>(generateInProcessInspections());
-  const [fixtures] = useState<Fixture[]>(generateFixtures());
-  const [gauges] = useState<Gauge[]>(generateGauges());
-  const [msaStudies] = useState<MSAGRRStudy[]>(generateMSAStudies());
-  const [pfmeaEntries] = useState<PFMEAEntry[]>(generatePFMEA());
-  const [controlPlanEntries] = useState<ControlPlanEntry[]>(generateControlPlan());
-  const [correctiveActions, setCorrectiveActions] = useState<CorrectiveAction[]>(generateCorrectiveActions());
-  const [investigations, setInvestigations] = useState<Investigation[]>(generateInvestigations());
-  const [knowledgeSkills] = useState<KnowledgeSkill[]>(generateKnowledgeMatrix());
+  // Load data from localStorage or use sample data
+  const storedData = loadFromStorage();
+  
+  const [projects, setProjects] = useState<Project[]>(storedData?.projects || generateSampleProjects());
+  const [activeProjectId, setActiveProjectId] = useState(storedData?.activeProjectId || 'PRJ-001');
+  const [production, setProduction] = useState<ProductionRecord[]>(storedData?.production || generateSampleProduction());
+  const [cmmReports, setCmmReports] = useState<CMMReport[]>(storedData?.cmmReports || generateSampleCMMReports());
+  const [characteristics, setCharacteristics] = useState<Characteristic[]>(
+    storedData?.characteristics || (() => generateCharacteristics(generateSampleCMMReports()))()
+  );
+  const [incomingRecords, setIncomingRecords] = useState<IncomingRecord[]>(storedData?.incomingRecords || generateSampleIncoming());
+  const [inProcessInspections, setInProcessInspections] = useState<InProcessInspection[]>(
+    storedData?.inProcessInspections || generateInProcessInspections()
+  );
+  const [fixtures, setFixtures] = useState<Fixture[]>(storedData?.fixtures || generateFixtures());
+  const [gauges, setGauges] = useState<Gauge[]>(storedData?.gauges || generateGauges());
+  const [msaStudies, setMsaStudies] = useState<MSAGRRStudy[]>(storedData?.msaStudies || generateMSAStudies());
+  const [pfmeaEntries, setPfmeaEntries] = useState<PFMEAEntry[]>(storedData?.pfmeaEntries || generatePFMEA());
+  const [controlPlanEntries, setControlPlanEntries] = useState<ControlPlanEntry[]>(storedData?.controlPlanEntries || generateControlPlan());
+  const [correctiveActions, setCorrectiveActions] = useState<CorrectiveAction[]>(storedData?.correctiveActions || generateCorrectiveActions());
+  const [investigations, setInvestigations] = useState<Investigation[]>(storedData?.investigations || generateInvestigations());
+  const [knowledgeSkills, setKnowledgeSkills] = useState<KnowledgeSkill[]>(storedData?.knowledgeSkills || generateKnowledgeMatrix());
   const [filters, setFiltersState] = useState<AppFilters>({
     projectId: 'all',
     partNumber: '',
@@ -75,6 +87,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [currentPage, setCurrentPage] = useState<PageKey>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(storedData?.lastSaved || null);
 
   const setActiveProject = useCallback((id: string) => {
     setActiveProjectId(id);
@@ -183,17 +196,81 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [inProcessInspections, filters, activeProjectId]);
 
+  // Auto-save to localStorage whenever data changes
+  useEffect(() => {
+    const dataToSave = {
+      projects,
+      activeProjectId,
+      production,
+      cmmReports,
+      characteristics,
+      incomingRecords,
+      inProcessInspections,
+      fixtures,
+      gauges,
+      msaStudies,
+      pfmeaEntries,
+      controlPlanEntries,
+      correctiveActions,
+      investigations,
+      knowledgeSkills,
+    };
+    
+    const success = saveToStorage(dataToSave);
+    if (success) {
+      setLastSaved(new Date().toISOString());
+    }
+  }, [
+    projects, activeProjectId, production, cmmReports, characteristics,
+    incomingRecords, inProcessInspections, fixtures, gauges, msaStudies,
+    pfmeaEntries, controlPlanEntries, correctiveActions, investigations, knowledgeSkills
+  ]);
+
+  // Export all data as JSON file
+  const exportAllData = useCallback(() => {
+    const jsonString = exportData();
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `automotive-qe-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // Import data from JSON string
+  const importDataFunc = useCallback((jsonString: string): boolean => {
+    const success = importData(jsonString);
+    if (success) {
+      // Reload the page to apply imported data
+      window.location.reload();
+      return true;
+    }
+    return false;
+  }, []);
+
+  // Clear all data and reset to sample data
+  const clearAllData = useCallback(() => {
+    if (window.confirm('Are you sure you want to clear all data? This will reset to sample data and cannot be undone.')) {
+      clearStorage();
+      window.location.reload();
+    }
+  }, []);
+
   return (
     <AppContext.Provider value={{
       projects, activeProjectId, production, cmmReports, characteristics, incomingRecords,
       inProcessInspections, fixtures, gauges, msaStudies, pfmeaEntries, controlPlanEntries,
       correctiveActions, investigations, knowledgeSkills,
-      filters, currentPage, sidebarCollapsed,
+      filters, currentPage, sidebarCollapsed, lastSaved,
       setActiveProject, setCurrentPage, setFilters, toggleSidebar,
       addProject, updateProject, duplicateProject, archiveProject,
       addProductionRecords, addCMMReports, addIncomingRecords,
       addInvestigation, updateInvestigation, addCorrectiveAction, updateCorrectiveAction,
       getFilteredProduction, getFilteredCMMMeasurements, getFilteredIncoming, getFilteredInProcess, getActiveProject,
+      exportAllData, importData: importDataFunc, clearAllData,
     }}>
       {children}
     </AppContext.Provider>
