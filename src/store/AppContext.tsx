@@ -35,8 +35,13 @@ interface AppContextType extends AppState {
   archiveProject: (id: string) => void;
   deleteProject: (id: string) => void;
   addProductionRecords: (records: ProductionRecord[]) => void;
+  updateProductionRecords: (records: ProductionRecord[]) => void;
   addCMMReports: (reports: CMMReport[]) => void;
+  updateCMMReports: (reports: CMMReport[]) => void;
   addIncomingRecords: (records: IncomingRecord[]) => void;
+  updateIncomingRecords: (records: IncomingRecord[]) => void;
+  addInProcessInspections: (records: InProcessInspection[]) => void;
+  updateInProcessInspections: (records: InProcessInspection[]) => void;
   addInvestigation: (inv: Investigation) => void;
   updateInvestigation: (inv: Investigation) => void;
   addCorrectiveAction: (action: CorrectiveAction) => void;
@@ -50,6 +55,7 @@ interface AppContextType extends AppState {
   importData: (jsonString: string) => boolean;
   clearAllData: () => void;
   lastSaved: string | null;
+  isSampleData: boolean;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -135,16 +141,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [activeProjectId]);
 
-  const addProductionRecords = useCallback((_records: ProductionRecord[]) => {
-    // In a real app, this would update state
+  const addProductionRecords = useCallback((records: ProductionRecord[]) => {
+    setProduction(prev => [...prev, ...records]);
   }, []);
 
-  const addCMMReports = useCallback((_reports: CMMReport[]) => {
-    // In a real app, this would update state
+  const updateProductionRecords = useCallback((records: ProductionRecord[]) => {
+    setProduction(records);
   }, []);
 
-  const addIncomingRecords = useCallback((_records: IncomingRecord[]) => {
-    // In a real app, this would update state
+  const addCMMReports = useCallback((reports: CMMReport[]) => {
+    setCmmReports(prev => [...prev, ...reports]);
+  }, []);
+
+  const updateCMMReports = useCallback((reports: CMMReport[]) => {
+    setCmmReports(reports);
+  }, []);
+
+  const addIncomingRecords = useCallback((records: IncomingRecord[]) => {
+    setIncomingRecords(prev => [...prev, ...records]);
+  }, []);
+
+  const updateIncomingRecords = useCallback((records: IncomingRecord[]) => {
+    setIncomingRecords(records);
+  }, []);
+
+  const addInProcessInspections = useCallback((records: InProcessInspection[]) => {
+    setInProcessInspections(prev => [...prev, ...records]);
+  }, []);
+
+  const updateInProcessInspections = useCallback((records: InProcessInspection[]) => {
+    setInProcessInspections(records);
   }, []);
 
   const addInvestigation = useCallback((inv: Investigation) => {
@@ -273,15 +299,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Check if we're using sample data
+  const isSampleData = !storedData;
+
   return (
     <AppContext.Provider value={{
       projects, activeProjectId, production, cmmReports, characteristics, incomingRecords,
       inProcessInspections, fixtures, gauges, msaStudies, pfmeaEntries, controlPlanEntries,
       correctiveActions, investigations, knowledgeSkills,
-      filters, currentPage, sidebarCollapsed, lastSaved,
+      filters, currentPage, sidebarCollapsed, lastSaved, isSampleData,
       setActiveProject, setCurrentPage, setFilters, toggleSidebar,
       addProject, updateProject, duplicateProject, archiveProject, deleteProject,
-      addProductionRecords, addCMMReports, addIncomingRecords,
+      addProductionRecords, updateProductionRecords, addCMMReports, updateCMMReports,
+      addIncomingRecords, updateIncomingRecords, addInProcessInspections, updateInProcessInspections,
       addInvestigation, updateInvestigation, addCorrectiveAction, updateCorrectiveAction,
       getFilteredProduction, getFilteredCMMMeasurements, getFilteredIncoming, getFilteredInProcess, getActiveProject,
       exportAllData, importData: importDataFunc, clearAllData,

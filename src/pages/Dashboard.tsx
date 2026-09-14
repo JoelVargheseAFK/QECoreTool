@@ -2,7 +2,7 @@ import { useApp } from '../store/AppContext';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Dashboard() {
-  const { getFilteredProduction, getFilteredCMMMeasurements, getActiveProject, projects, activeProjectId } = useApp();
+  const { getFilteredProduction, getFilteredCMMMeasurements, getActiveProject, projects, activeProjectId, isSampleData } = useApp();
   const prod = getFilteredProduction();
   const cmm = getFilteredCMMMeasurements();
   const project = getActiveProject();
@@ -70,6 +70,17 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
+      {/* Sample Data Banner */}
+      {isSampleData && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+          <i className="fas fa-info-circle text-blue-500"></i>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-blue-900">Viewing Sample Data</p>
+            <p className="text-xs text-blue-700">This is demonstration data. Your changes to projects, investigations, and corrective actions are saved automatically. Use Settings to export/import your data.</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
