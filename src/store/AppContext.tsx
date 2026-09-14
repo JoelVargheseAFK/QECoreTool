@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Project, ProductionRecord, CMMReport, CMMMeasurement, Characteristic, IncomingRecord, AppFilters, PageKey } from '../types';
-import { generateSampleProjects, generateSampleProduction, generateSampleCMMReports, generateSampleIncoming, generateCharacteristics } from '../data/sampleData';
+import { Project, ProductionRecord, CMMReport, CMMMeasurement, Characteristic, IncomingRecord, AppFilters, PageKey, InProcessInspection, Fixture, Gauge, MSAGRRStudy, PFMEAEntry, ControlPlanEntry, CorrectiveAction, Investigation, KnowledgeSkill } from '../types';
+import { generateSampleProjects, generateSampleProduction, generateSampleCMMReports, generateSampleIncoming, generateCharacteristics, generateInProcessInspections, generateFixtures, generateGauges, generateMSAStudies, generatePFMEA, generateControlPlan, generateCorrectiveActions, generateInvestigations, generateKnowledgeMatrix } from '../data/sampleData';
 
 interface AppState {
   projects: Project[];
@@ -9,6 +9,15 @@ interface AppState {
   cmmReports: CMMReport[];
   characteristics: Characteristic[];
   incomingRecords: IncomingRecord[];
+  inProcessInspections: InProcessInspection[];
+  fixtures: Fixture[];
+  gauges: Gauge[];
+  msaStudies: MSAGRRStudy[];
+  pfmeaEntries: PFMEAEntry[];
+  controlPlanEntries: ControlPlanEntry[];
+  correctiveActions: CorrectiveAction[];
+  investigations: Investigation[];
+  knowledgeSkills: KnowledgeSkill[];
   filters: AppFilters;
   currentPage: PageKey;
   sidebarCollapsed: boolean;
@@ -26,9 +35,14 @@ interface AppContextType extends AppState {
   addProductionRecords: (records: ProductionRecord[]) => void;
   addCMMReports: (reports: CMMReport[]) => void;
   addIncomingRecords: (records: IncomingRecord[]) => void;
+  addInvestigation: (inv: Investigation) => void;
+  updateInvestigation: (inv: Investigation) => void;
+  addCorrectiveAction: (action: CorrectiveAction) => void;
+  updateCorrectiveAction: (action: CorrectiveAction) => void;
   getFilteredProduction: () => ProductionRecord[];
   getFilteredCMMMeasurements: () => CMMMeasurement[];
   getFilteredIncoming: () => IncomingRecord[];
+  getFilteredInProcess: () => InProcessInspection[];
   getActiveProject: () => Project | undefined;
 }
 
@@ -41,6 +55,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [cmmReports] = useState<CMMReport[]>(generateSampleCMMReports());
   const [characteristics] = useState<Characteristic[]>(() => generateCharacteristics(generateSampleCMMReports()));
   const [incomingRecords] = useState<IncomingRecord[]>(generateSampleIncoming());
+  const [inProcessInspections] = useState<InProcessInspection[]>(generateInProcessInspections());
+  const [fixtures] = useState<Fixture[]>(generateFixtures());
+  const [gauges] = useState<Gauge[]>(generateGauges());
+  const [msaStudies] = useState<MSAGRRStudy[]>(generateMSAStudies());
+  const [pfmeaEntries] = useState<PFMEAEntry[]>(generatePFMEA());
+  const [controlPlanEntries] = useState<ControlPlanEntry[]>(generateControlPlan());
+  const [correctiveActions, setCorrectiveActions] = useState<CorrectiveAction[]>(generateCorrectiveActions());
+  const [investigations, setInvestigations] = useState<Investigation[]>(generateInvestigations());
+  const [knowledgeSkills] = useState<KnowledgeSkill[]>(generateKnowledgeMatrix());
   const [filters, setFiltersState] = useState<AppFilters>({
     projectId: 'all',
     partNumber: '',
@@ -97,6 +120,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // In a real app, this would update state
   }, []);
 
+  const addInvestigation = useCallback((inv: Investigation) => {
+    setInvestigations(prev => [...prev, inv]);
+  }, []);
+
+  const updateInvestigation = useCallback((inv: Investigation) => {
+    setInvestigations(prev => prev.map(i => i.id === inv.id ? inv : i));
+  }, []);
+
+  const addCorrectiveAction = useCallback((action: CorrectiveAction) => {
+    setCorrectiveActions(prev => [...prev, action]);
+  }, []);
+
+  const updateCorrectiveAction = useCallback((action: CorrectiveAction) => {
+    setCorrectiveActions(prev => prev.map(a => a.id === action.id ? action : a));
+  }, []);
+
   const getActiveProject = useCallback(() => {
     return projects.find(p => p.id === activeProjectId);
   }, [projects, activeProjectId]);
@@ -136,14 +175,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [incomingRecords, filters, activeProjectId]);
 
+  const getFilteredInProcess = useCallback(() => {
+    return inProcessInspections.filter(r => {
+      if (filters.projectId !== 'all' && r.projectId !== filters.projectId) return false;
+      if (filters.projectId === 'all' && activeProjectId && r.projectId !== activeProjectId) return false;
+      return true;
+    });
+  }, [inProcessInspections, filters, activeProjectId]);
+
   return (
     <AppContext.Provider value={{
       projects, activeProjectId, production, cmmReports, characteristics, incomingRecords,
+      inProcessInspections, fixtures, gauges, msaStudies, pfmeaEntries, controlPlanEntries,
+      correctiveActions, investigations, knowledgeSkills,
       filters, currentPage, sidebarCollapsed,
       setActiveProject, setCurrentPage, setFilters, toggleSidebar,
       addProject, updateProject, duplicateProject, archiveProject,
       addProductionRecords, addCMMReports, addIncomingRecords,
-      getFilteredProduction, getFilteredCMMMeasurements, getFilteredIncoming, getActiveProject,
+      addInvestigation, updateInvestigation, addCorrectiveAction, updateCorrectiveAction,
+      getFilteredProduction, getFilteredCMMMeasurements, getFilteredIncoming, getFilteredInProcess, getActiveProject,
     }}>
       {children}
     </AppContext.Provider>

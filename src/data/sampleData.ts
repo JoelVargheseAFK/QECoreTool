@@ -1,4 +1,4 @@
-import { Project, ProductionRecord, CMMReport, CMMMeasurement, IncomingRecord, Characteristic } from '../types';
+import { Project, ProductionRecord, CMMReport, CMMMeasurement, IncomingRecord, Characteristic, InProcessInspection, Fixture, Gauge, MSAGRRStudy, PFMEAEntry, ControlPlanEntry, CorrectiveAction, Investigation, KnowledgeSkill } from '../types';
 
 const rand = (min: number, max: number, dec = 3) => parseFloat((Math.random() * (max - min) + min).toFixed(dec));
 
@@ -227,4 +227,366 @@ export function generateCharacteristics(reports: CMMReport[]): Characteristic[] 
     });
   });
   return Array.from(charMap.values());
+}
+
+export function generateInProcessInspections(): InProcessInspection[] {
+  const inspections: InProcessInspection[] = [];
+  const processes = ['CNC Milling', 'Drilling', 'Reaming', 'Boring', 'Turning'];
+  const stations = ['ST-01', 'ST-02', 'ST-03', 'ST-04', 'ST-05'];
+  const characteristics = ['Hole Diameter', 'Position', 'Surface Finish', 'Flatness', 'Concentricity'];
+  const methods = ['CMM', 'Gauge', 'Micrometer', 'Profilometer', 'Visual'];
+  const gauges = ['GAU-001', 'GAU-002', 'GAU-003', 'GAU-004', 'GAU-005'];
+  const fixtures = ['FIX-001', 'FIX-002', 'FIX-003', 'FIX-004'];
+  const inspectors = ['INS-001', 'INS-002', 'INS-003'];
+
+  for (let i = 0; i < 50; i++) {
+    const date = new Date(2026, 0, 1 + i);
+    const spec = rand(0.01, 0.1);
+    const measurement = rand(-spec * 1.2, spec * 1.2);
+    inspections.push({
+      id: `IPI-${i}`,
+      projectId: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      process: processes[i % processes.length],
+      station: stations[i % stations.length],
+      partNumber: i % 2 === 0 ? 'AC-1042' : 'DT-7780',
+      characteristic: characteristics[i % characteristics.length],
+      specification: `±${spec.toFixed(3)} mm`,
+      inspectionMethod: methods[i % methods.length],
+      gauge: gauges[i % gauges.length],
+      fixture: fixtures[i % fixtures.length],
+      sampleSize: 5,
+      frequency: 'Every 2 hours',
+      measurement: parseFloat(measurement.toFixed(4)),
+      result: Math.abs(measurement) > spec ? 'FAIL' : 'PASS',
+      reactionPlan: 'Stop process, notify supervisor, contain parts',
+      date: date.toISOString().split('T')[0],
+      inspector: inspectors[i % inspectors.length],
+    });
+  }
+  return inspections;
+}
+
+export function generateFixtures(): Fixture[] {
+  const fixtures: Fixture[] = [];
+  const parts = ['AC-1042', 'DT-7780', 'VD-3301'];
+  const statuses: Fixture['verificationStatus'][] = ['Valid', 'Due Soon', 'Overdue', 'Out of Service'];
+
+  for (let i = 0; i < 15; i++) {
+    const lastVerif = new Date(2026, 0, 1 + i * 10);
+    const nextDue = new Date(lastVerif);
+    nextDue.setMonth(nextDue.getMonth() + 3);
+    
+    fixtures.push({
+      id: `FIX-${i}`,
+      fixtureId: `FIX-${String(i + 1).padStart(3, '0')}`,
+      name: `Fixture ${String.fromCharCode(65 + i)}`,
+      part: parts[i % parts.length],
+      process: ['Milling', 'Drilling', 'Assembly'][i % 3],
+      station: `ST-${(i % 5) + 1}`,
+      characteristic: ['Position', 'Concentricity', 'Parallelism'][i % 3],
+      datumA: `Datum A-${i}`,
+      datumB: `Datum B-${i}`,
+      datumC: i % 2 === 0 ? `Datum C-${i}` : '',
+      locator: `LOC-${i}`,
+      pin: `PIN-${i}`,
+      clamp: `CLP-${i}`,
+      nest: `NST-${i}`,
+      masterPart: `MP-${i}`,
+      verificationStatus: statuses[i % statuses.length],
+      lastVerification: lastVerif.toISOString().split('T')[0],
+      nextDue: nextDue.toISOString().split('T')[0],
+      condition: i % 4 === 0 ? 'Good' : i % 4 === 1 ? 'Fair' : 'Needs Attention',
+    });
+  }
+  return fixtures;
+}
+
+export function generateGauges(): Gauge[] {
+  const gauges: Gauge[] = [];
+  const types = ['CMM Probe', 'Go/No-Go', 'Micrometer', 'Caliper', 'Height Gauge', 'Bore Gauge'];
+  const statuses: Gauge['calibrationStatus'][] = ['Valid', 'Due Soon', 'Overdue', 'Out of Service'];
+
+  for (let i = 0; i < 20; i++) {
+    const lastCal = new Date(2026, 0, 1 + i * 7);
+    const nextDue = new Date(lastCal);
+    nextDue.setMonth(nextDue.getMonth() + 6);
+    
+    gauges.push({
+      id: `GAU-${i}`,
+      gaugeId: `GAU-${String(i + 1).padStart(3, '0')}`,
+      name: `${types[i % types.length]} ${i + 1}`,
+      gaugeType: types[i % types.length],
+      serialNumber: `SN-${10000 + i}`,
+      part: i % 2 === 0 ? 'AC-1042' : 'DT-7780',
+      characteristic: ['Diameter', 'Position', 'Flatness', 'Depth'][i % 4],
+      calibrationStatus: statuses[i % statuses.length],
+      lastCalibration: lastCal.toISOString().split('T')[0],
+      nextDue: nextDue.toISOString().split('T')[0],
+      location: `Lab ${i % 3 + 1}`,
+      condition: i % 3 === 0 ? 'Excellent' : i % 3 === 1 ? 'Good' : 'Fair',
+    });
+  }
+  return gauges;
+}
+
+export function generateMSAStudies(): MSAGRRStudy[] {
+  const studies: MSAGRRStudy[] = [];
+  const operators = ['OP-001', 'OP-002', 'OP-003'];
+  const parts = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10'];
+
+  for (let i = 0; i < 8; i++) {
+    const measurements: MSAGRRStudy['measurements'] = [];
+    const baseValue = 10 + i * 0.5;
+    
+    operators.forEach(op => {
+      parts.forEach((part, pi) => {
+        for (let trial = 1; trial <= 3; trial++) {
+          measurements.push({
+            operator: op,
+            part,
+            trial,
+            measurement: parseFloat((baseValue + pi * 0.1 + (Math.random() - 0.5) * 0.02).toFixed(4)),
+          });
+        }
+      });
+    });
+
+    const repeatability = rand(0.001, 0.005);
+    const reproducibility = rand(0.002, 0.008);
+    const gaugeRR = Math.sqrt(repeatability ** 2 + reproducibility ** 2);
+    const partToPart = rand(0.05, 0.15);
+    const totalVariation = Math.sqrt(gaugeRR ** 2 + partToPart ** 2);
+    const percentStudyVar = (gaugeRR / totalVariation) * 100;
+
+    studies.push({
+      id: `MSA-${i}`,
+      projectId: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      part: i % 2 === 0 ? 'AC-1042' : 'DT-7780',
+      characteristic: ['Hole Diameter', 'Position', 'Flatness'][i % 3],
+      gauge: `GAU-${String(i + 1).padStart(3, '0')}`,
+      operators,
+      parts,
+      trials: 3,
+      measurements,
+      repeatability,
+      reproducibility,
+      gaugeRR,
+      partToPart,
+      totalVariation,
+      percentStudyVar,
+      percentContribution: (gaugeRR ** 2 / totalVariation ** 2) * 100,
+      acceptanceCriteria: 10,
+      result: percentStudyVar < 10 ? 'Acceptable' : percentStudyVar < 30 ? 'Marginal' : 'Unacceptable',
+      date: new Date(2026, 0, 1 + i * 15).toISOString().split('T')[0],
+    });
+  }
+  return studies;
+}
+
+export function generatePFMEA(): PFMEAEntry[] {
+  const entries: PFMEAEntry[] = [];
+  const processSteps = ['Load Part', 'Clamp Part', 'Rough Mill', 'Finish Mill', 'Drill Holes', 'Ream Holes', 'Inspect', 'Unload Part'];
+  const failureModes = ['Part mislocated', 'Part loose', 'Tool breakage', 'Dimensional error', 'Hole oversize', 'Hole position error', 'Surface defect', 'Part damage'];
+  const statuses: PFMEAEntry['status'][] = ['Open', 'In Progress', 'Closed', 'Overdue'];
+
+  for (let i = 0; i < 25; i++) {
+    const severity = Math.floor(Math.random() * 10) + 1;
+    const occurrence = Math.floor(Math.random() * 10) + 1;
+    const detection = Math.floor(Math.random() * 10) + 1;
+    const rpn = severity * occurrence * detection;
+
+    entries.push({
+      id: `PFMEA-${i}`,
+      projectId: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      processStep: processSteps[i % processSteps.length],
+      processFunction: `Perform ${processSteps[i % processSteps.length].toLowerCase()}`,
+      failureMode: failureModes[i % failureModes.length],
+      effect: 'Part out of specification',
+      severity,
+      cause: 'Tool wear, fixture issue, operator error',
+      occurrence,
+      preventionControl: 'Regular tool change, fixture verification',
+      detectionControl: 'In-process inspection, CMM check',
+      detection,
+      rpn,
+      action: rpn > 100 ? 'Implement additional control' : 'Monitor',
+      responsible: `ENG-${(i % 3) + 1}`,
+      dueDate: new Date(2026, 1, 1 + i * 5).toISOString().split('T')[0],
+      status: statuses[i % statuses.length],
+    });
+  }
+  return entries;
+}
+
+export function generateControlPlan(): ControlPlanEntry[] {
+  const entries: ControlPlanEntry[] = [];
+  const processSteps = ['Incoming', 'Milling', 'Drilling', 'Reaming', 'Final Inspection'];
+  const characteristics = ['Material Cert', 'Hole Diameter', 'Position', 'Surface Finish', 'Visual'];
+  const statuses: ControlPlanEntry['status'][] = ['Active', 'Review Required', 'Obsolete'];
+
+  for (let i = 0; i < 20; i++) {
+    const revDate = new Date(2026, 0, 1 + i * 10);
+    
+    entries.push({
+      id: `CP-${i}`,
+      projectId: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      processStep: processSteps[i % processSteps.length],
+      productCharacteristic: characteristics[i % characteristics.length],
+      processCharacteristic: ['Feed Rate', 'Speed', 'Depth', 'Coolant'][i % 4],
+      specification: `±${rand(0.01, 0.1).toFixed(3)} mm`,
+      specialCharacteristic: i % 3 === 0 ? 'CC' : i % 3 === 1 ? 'SC' : '',
+      measurementMethod: ['CMM', 'Gauge', 'Visual', 'Micrometer'][i % 4],
+      gauge: `GAU-${String((i % 5) + 1).padStart(3, '0')}`,
+      fixture: `FIX-${String((i % 4) + 1).padStart(3, '0')}`,
+      sampleSize: [1, 5, 10, 100][i % 4],
+      frequency: ['100%', 'Every 2 hrs', 'Every shift', 'Per lot'][i % 4],
+      controlMethod: 'SPC chart, inspection record',
+      reactionPlan: 'Stop process, contain, notify supervisor',
+      responsible: `QE-${(i % 3) + 1}`,
+      revision: `Rev ${String.fromCharCode(65 + (i % 5))}`,
+      revisionDate: revDate.toISOString().split('T')[0],
+      changeDescription: 'Updated specification',
+      approvedBy: `MGR-${(i % 2) + 1}`,
+      status: statuses[i % statuses.length],
+    });
+  }
+  return entries;
+}
+
+export function generateCorrectiveActions(): CorrectiveAction[] {
+  const actions: CorrectiveAction[] = [];
+  const defects = ['Oversize Hole', 'Position OOT', 'Surface Defect', 'Flatness OOT', 'Burr'];
+  const statuses: CorrectiveAction['status'][] = ['Open', 'In Progress', 'Verification', 'Closed'];
+
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(2026, 0, 1 + i * 8);
+    const dueDate = new Date(date);
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    actions.push({
+      id: `8D-${i}`,
+      issueId: `ISS-${2026}${String(i + 1).padStart(3, '0')}`,
+      projectId: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      part: i % 2 === 0 ? 'AC-1042' : 'DT-7780',
+      process: ['Milling', 'Drilling', 'Reaming'][i % 3],
+      defect: defects[i % defects.length],
+      characteristic: ['Hole Diameter', 'Position', 'Surface Finish'][i % 3],
+      date: date.toISOString().split('T')[0],
+      d1Team: 'QE Team, Process Engineer, Operator',
+      d2Problem: `${defects[i % defects.length]} on ${i % 2 === 0 ? 'AC-1042' : 'DT-7780'}`,
+      d3Containment: 'Sort all parts, quarantine suspect lot',
+      d4RootCause: i % 3 === 0 ? 'Tool wear exceeded limit' : i % 3 === 1 ? 'Fixture locator worn' : 'Coolant concentration low',
+      d5CorrectiveAction: i % 3 === 0 ? 'Reduce tool life by 20%' : i % 3 === 1 ? 'Replace fixture locators' : 'Increase coolant concentration check frequency',
+      d6Implementation: 'Update tool life program, install new locators, revise coolant procedure',
+      d7Effectiveness: i < 6 ? 'Verified - defect rate reduced by 80%' : 'Pending verification',
+      d8Closure: i < 4 ? 'Closed - effective' : '',
+      responsible: `ENG-${(i % 3) + 1}`,
+      dueDate: dueDate.toISOString().split('T')[0],
+      verification: i < 6 ? 'CMM data shows improvement' : 'In progress',
+      status: statuses[i % statuses.length],
+      beforeCpk: i % 2 === 0 ? 0.95 : 1.05,
+      afterCpk: i < 6 ? 1.45 : undefined,
+      beforePpm: 15000,
+      afterPpm: i < 6 ? 3000 : undefined,
+      beforeScrap: 50,
+      afterScrap: i < 6 ? 10 : undefined,
+    });
+  }
+  return actions;
+}
+
+export function generateInvestigations(): Investigation[] {
+  const investigations: Investigation[] = [];
+  const problemTypes: Investigation['problemType'][] = ['Defect', 'CMM Characteristic', 'Scrap Issue', 'Process Issue'];
+  const statuses: Investigation['status'][] = ['Open', 'Investigating', 'Root Cause Identified', 'Action Taken', 'Closed'];
+
+  for (let i = 0; i < 8; i++) {
+    const date = new Date(2026, 0, 1 + i * 10);
+    
+    investigations.push({
+      id: `INV-${i}`,
+      projectId: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      problemType: problemTypes[i % problemTypes.length],
+      problemDescription: `Investigation ${i + 1}: ${problemTypes[i % problemTypes.length]} on characteristic`,
+      characteristic: ['Hole Diameter', 'Position', 'Flatness'][i % 3],
+      part: i % 2 === 0 ? 'AC-1042' : 'DT-7780',
+      specification: '±0.05 mm',
+      actual: parseFloat((0.05 + rand(0, 0.03)).toFixed(4)),
+      deviation: parseFloat(rand(0.05, 0.08).toFixed(4)),
+      passFail: 'FAIL',
+      dateRange: {
+        from: date.toISOString().split('T')[0],
+        to: new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      },
+      machine: `CNC-${String((i % 3) + 1).padStart(2, '0')}`,
+      process: ['Milling', 'Drilling', 'Reaming'][i % 3],
+      station: `ST-${(i % 5) + 1}`,
+      shift: ['Day', 'Swing', 'Night'][i % 3],
+      serialNumber: `SN-${10000 + i}`,
+      lot: `LOT-${2026}${String(i + 1).padStart(3, '0')}`,
+      supplier: i % 2 === 0 ? 'SteelCo Inc' : 'AlumWorks LLC',
+      gauge: `GAU-${String((i % 5) + 1).padStart(3, '0')}`,
+      fixture: `FIX-${String((i % 4) + 1).padStart(3, '0')}`,
+      potentialContributors: [
+        {
+          factor: `Machine CNC-${String((i % 3) + 1).padStart(2, '0')}`,
+          type: 'Machine',
+          evidence: 'Higher failure rate observed on this machine',
+          association: i % 3 === 0 ? 'Strong' : 'Moderate',
+        },
+        {
+          factor: 'Night Shift',
+          type: 'Shift',
+          evidence: 'Observed association with increased defects',
+          association: 'Moderate',
+        },
+        {
+          factor: `Fixture FIX-${String((i % 4) + 1).padStart(3, '0')}`,
+          type: 'Fixture',
+          evidence: 'Requires investigation - locator wear suspected',
+          association: 'Weak',
+        },
+      ],
+      correctiveActionId: i < 4 ? `8D-${i}` : undefined,
+      status: statuses[i % statuses.length],
+      date: date.toISOString().split('T')[0],
+    });
+  }
+  return investigations;
+}
+
+export function generateKnowledgeMatrix(): KnowledgeSkill[] {
+  const skills: KnowledgeSkill[] = [];
+  const categories = [
+    'Product/Drawing', 'GD&T', 'CMM', 'SPC', 'Capability', 'PFMEA', 
+    'Control Plan', '8D', 'MSA', 'GR&R', 'Supplier Quality', 'Auditing'
+  ];
+  const skillNames = [
+    'Reading drawings', 'GD&T interpretation', 'CMM programming', 'SPC charting',
+    'Capability analysis', 'PFMEA development', 'Control plan creation', '8D facilitation',
+    'MSA planning', 'GR&R execution', 'Supplier audits', 'Process audits'
+  ];
+  const competencies: KnowledgeSkill['competency'][] = ['Observe', 'Assist', 'Perform', 'Lead', 'Teach'];
+  const statuses: KnowledgeSkill['status'][] = ['Not Started', 'In Progress', 'Completed'];
+
+  for (let i = 0; i < 30; i++) {
+    const required = Math.floor(Math.random() * 5);
+    const current = Math.floor(Math.random() * 5);
+    
+    skills.push({
+      id: `SKILL-${i}`,
+      category: categories[i % categories.length],
+      skill: skillNames[i % skillNames.length],
+      requiredLevel: required,
+      currentLevel: current,
+      gap: required - current,
+      evidence: i % 2 === 0 ? 'Training completed' : 'On-the-job experience',
+      project: i % 2 === 0 ? 'PRJ-001' : 'PRJ-002',
+      action: current < required ? 'Schedule training' : 'Maintain competency',
+      targetDate: new Date(2026, 3, 1 + i * 10).toISOString().split('T')[0],
+      status: statuses[i % statuses.length],
+      competency: competencies[i % competencies.length],
+    });
+  }
+  return skills;
 }

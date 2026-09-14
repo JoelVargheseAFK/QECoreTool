@@ -13,12 +13,22 @@ import Capability from './pages/Capability';
 import DefectPareto from './pages/DefectPareto';
 import ScrapCost from './pages/ScrapCost';
 import IncomingInspection from './pages/IncomingInspection';
+import InProcessInspection from './pages/InProcessInspection';
+import FixturesGauges from './pages/FixturesGauges';
+import MSA from './pages/MSA';
+import PFMEA from './pages/PFMEA';
+import ControlPlan from './pages/ControlPlan';
+import CorrectiveActions from './pages/CorrectiveActions';
+import InvestigationPage from './pages/Investigation';
+import Reports from './pages/Reports';
+import KnowledgeMatrix from './pages/KnowledgeMatrix';
 import Correlation from './pages/Correlation';
 import PlaceholderPage from './pages/PlaceholderPage';
 
 const navItems: { key: PageKey; label: string; icon: string; group: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'fa-tachometer-alt', group: 'Main' },
   { key: 'projects', label: 'Projects', icon: 'fa-project-diagram', group: 'Main' },
+  { key: 'investigation', label: 'QE Investigation', icon: 'fa-search', group: 'Main' },
   { key: 'production', label: 'Production Data', icon: 'fa-industry', group: 'Data' },
   { key: 'cmm-reports', label: 'CMM Reports', icon: 'fa-file-excel', group: 'Data' },
   { key: 'characteristics', label: 'CMM Characteristics', icon: 'fa-draw-polygon', group: 'Data' },
@@ -52,6 +62,7 @@ function AppContent() {
     switch (currentPage) {
       case 'dashboard': return <Dashboard />;
       case 'projects': return <Projects />;
+      case 'investigation': return <InvestigationPage />;
       case 'production': return <ProductionData />;
       case 'data-mapping': return <DataMapping />;
       case 'cmm-reports': return <CMMReports />;
@@ -63,6 +74,14 @@ function AppContent() {
       case 'defect-pareto': return <DefectPareto />;
       case 'scrap-cost': return <ScrapCost />;
       case 'incoming': return <IncomingInspection />;
+      case 'in-process': return <InProcessInspection />;
+      case 'fixtures-gauges': return <FixturesGauges />;
+      case 'msa': return <MSA />;
+      case 'pfmea': return <PFMEA />;
+      case 'control-plan': return <ControlPlan />;
+      case '8d': return <CorrectiveActions />;
+      case 'knowledge-matrix': return <KnowledgeMatrix />;
+      case 'reports': return <Reports />;
       case 'correlation': return <Correlation />;
       default: return <PlaceholderPage pageKey={currentPage} />;
     }
